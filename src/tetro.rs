@@ -80,7 +80,7 @@ impl Tetro {
             ])},
             || -> Tetro { Tetro::from_vec(vec![
                 vec![None, Some(Color::Magenta), None],
-                vec![Some(Color::Magenta), Some(Color::Magenta), None]
+                vec![Some(Color::Magenta), Some(Color::Magenta), Some(Color::Magenta)]
             ])},
             || -> Tetro { Tetro::from_vec(vec![
                 vec![Some(Color::Red), Some(Color::Red), None],
