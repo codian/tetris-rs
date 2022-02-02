@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use tui::{
     style::{Color, Style},
     text::{Span, Spans},
@@ -73,5 +74,21 @@ impl Buffer {
         Buffer {
             cells
         }
+    }
+}
+
+impl Display for Buffer {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let mut count = 0;
+        let width = self.width();
+        let height = self.height();
+        for y in 0..height {
+            for x in 0..width {
+                if let Some(_) = self.get(x, y) {
+                    count += 1;
+                }
+            }
+        }
+        write!(f, "Cells count: {}", count)
     }
 }

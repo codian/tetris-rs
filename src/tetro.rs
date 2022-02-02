@@ -9,25 +9,27 @@ use tui::{
 };
 use rand::{Rng, thread_rng};
 use tui::widgets::Widget;
-
 use crate::{
     buffer::Buffer,
     units::Size
 };
 
 #[derive(Clone, Debug)]
+pub enum TetroState {
+    Descent,
+    WaitToPlace
+}
+
+#[derive(Clone, Debug)]
 pub struct Tetro {
-  pub buffer: Buffer
+    pub state: TetroState,
+    pub buffer: Buffer
 }
 
 impl Tetro {
-    pub fn widget(&self) -> Paragraph {
-        let spans: Vec<Spans> = self.buffer.to_spans();
-        Paragraph::new(spans)
-    }
-
     pub fn rotate_right(&mut self) -> Tetro {
         Tetro {
+            state: TetroState::Descent,
             buffer: self.buffer.rotate_right()
         }
     }
@@ -51,6 +53,7 @@ impl Tetro {
 
     pub fn from_vec(buffer: Vec<Vec<Option<Color>>>) -> Tetro {
         Tetro {
+            state: TetroState::Descent,
             buffer: Buffer::from_vecs(buffer)
         }
     }

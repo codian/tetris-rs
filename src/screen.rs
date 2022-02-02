@@ -69,8 +69,8 @@ impl Screen {
             0, 2, pl_size.width + 2, pl_size.height + 2));
 
         // playground
-        let playground = self.playground.widget();
-        f.render_widget(playground, self.rect(
+        let widget = Paragraph::new(self.playground.buffer.to_spans());
+        f.render_widget(widget, self.rect(
             1, 3, pl_size.width, pl_size.height));
 
         // next frame
@@ -85,7 +85,8 @@ impl Screen {
         // next
         if let Some(next) = &self.playground.next {
             let next_size = next.size();
-            f.render_widget(next.widget(), self.rect(
+            let widget = Paragraph::new(next.buffer.to_spans());
+            f.render_widget(widget, self.rect(
                 1 + pl_size.width + 2 + 1 + 1, 3, next_size.width, next_size.height));
         }
 
@@ -93,7 +94,8 @@ impl Screen {
         if let Some(tetro) = &self.playground.tetro {
             let pos = &self.playground.tetro_pos;
             let size = tetro.size();
-            f.render_widget(tetro.widget(), self.rect(
+            let widget = Paragraph::new(tetro.buffer.to_spans());
+            f.render_widget(widget, self.rect(
                 1 + pos.x, 3 + pos.y, size.width, size.height));
         }
 

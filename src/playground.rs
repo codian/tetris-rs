@@ -14,20 +14,13 @@ use crossterm::{
                LeaveAlternateScreen}
 };
 use crate::{
-    tetro::Tetro,
+    tetro::{Tetro, TetroState},
     buffer::Buffer,
     units::{Pos, Size}
 };
-use crate::playground::IntentResult::OutBound;
 
 const SIZE: Size = Size { width: 12, height: 20 };
-const MAX_DROP_SPEED: u32 = 10;
-
-enum IntentResult {
-    Ok(Pos),
-    OutBound(Pos),
-    ReachBottom(Pos)
-}
+const MAX_DESCENT_SPEED: u32 = 10;
 
 #[derive(Debug)]
 pub struct Playground {
@@ -41,25 +34,12 @@ pub struct Playground {
     pub buffer: Buffer,
 
     // speed
-    pub drop_speed: u32,
+    pub descent_speed: u32,
     pub tick_count: u32
 }
 
 impl Playground {
     pub fn size(&self) -> Size { SIZE }
-
-    pub fn widget(&self) -> Paragraph {
-        let buffer =
-            if let Some(tetro) = &self.tetro {
-                &self.buffer // TODO + tetro.buffer
-            } else {
-                &self.buffer
-            };
-
-        let spans: Vec<Spans> = buffer.to_spans();
-
-        Paragraph::new(spans)
-    }
 
     pub fn on_tick(&mut self) {
         // new next and tetro
@@ -75,38 +55,38 @@ impl Playground {
                 None
             };
 
-            self.debug_msg = format!("{:?}", self.next);
+            // self.debug_msg = format!("{:?}", self.next);
         }
 
-        // drop tetro soft
+        // descent tetro soft
         self.tick_count += 1;
-        if self.tick_count > (MAX_DROP_SPEED - self.drop_speed) {
-            self.drop_soft();
+        if self.tick_count > (MAX_DESCENT_SPEED - self.descent_speed) {
+            self.descend_soft();
         }
-        self.debug_msg = format!("{:?}", self.tick_count);
+        // self.debug_msg = format!("{:?}", self.tick_count);
     }
 
     pub fn on_keydown(&mut self, key: &KeyEvent) {
         match key.code {
             KeyCode::Left => {
-                self.debug_msg = String::from("left");
+                // self.debug_msg = String::from("left");
                 self.move_left();
             },
             KeyCode::Right => {
-                self.debug_msg = String::from("right");
+                // self.debug_msg = String::from("right");
                 self.move_right();
             },
             KeyCode::Up => {
-                self.debug_msg = String::from("up");
+                // self.debug_msg = String::from("up");
                 self.rotate_right();
             },
             KeyCode::Down => {
-                self.debug_msg = String::from("down");
-                self.drop_soft();
+                // self.debug_msg = String::from("down");
+                self.descend_soft();
             },
             KeyCode::Char(char) if char == ' ' => {
-                self.debug_msg = String::from("space");
-                self.drop_hard();
+                // self.debug_msg = String::from("space");
+                self.descend_hard();
             },
             _ => {}
         }
@@ -121,7 +101,7 @@ impl Playground {
             next: None,
             debug_msg: String::from(""),
 
-            drop_speed: 1,
+            descent_speed: 1,
             tick_count: 0
         }
     }
@@ -130,73 +110,92 @@ impl Playground {
         if self.tetro_pos.x == 0 { return }
 
         if let Some(mut tetro) = self.tetro.take() {
-            let new_pos =
-                match self.intend_to_move(self.tetro_pos.x - 1, self.tetro_pos.y, &tetro) {
-                    IntentResult::Ok(pos) => pos,
-                    IntentResult::ReachBottom(pos) => pos,
-                    IntentResult::OutBound(pos) => pos
-                };
-
+            self.move_to(self.tetro_pos.x - 1, self.tetro_pos.y, &mut tetro);
             self.tetro = Some(tetro);
-            self.tetro_pos = new_pos;
         }
     }
 
     pub fn move_right(&mut self) {
         if let Some(mut tetro) = self.tetro.take() {
-            let new_pos =
-                match self.intend_to_move(self.tetro_pos.x + 1, self.tetro_pos.y, &tetro) {
-                    IntentResult::Ok(pos) => pos,
-                    IntentResult::ReachBottom(pos) => pos,
-                    IntentResult::OutBound(pos) => pos
-                };
-
+            self.move_to(self.tetro_pos.x + 1, self.tetro_pos.y, &mut tetro);
             self.tetro = Some(tetro);
-            self.tetro_pos = new_pos;
         }
     }
 
     pub fn rotate_right(&mut self) {
         if let Some(mut tetro) = self.tetro.take() {
-            let size = tetro.size();
             let new_tetro = tetro.rotate_right();
-            let new_pos =
-                match self.intend_to_move(self.tetro_pos.x + size.mid_x() - 1, self.tetro_pos.y + size.mid_y() - 1, &tetro) {
-                    IntentResult::Ok(pos) => pos,
-                    IntentResult::ReachBottom(pos) => pos,
-                    IntentResult::OutBound(pos) => pos
-                };
-
+            let size = tetro.size();
+            self.move_to(self.tetro_pos.x + size.mid_x() - 1, self.tetro_pos.y + size.mid_y() - 1, &mut tetro);
             self.tetro = Some(new_tetro);
-            self.tetro_pos = new_pos;
         }
     }
-    pub fn drop_soft(&mut self) {
+    pub fn descend_soft(&mut self) {
         if let Some(mut tetro) = self.tetro.take() {
-            self.tetro_pos =
-                match self.intend_to_move(self.tetro_pos.x, self.tetro_pos.y + 1, &tetro) {
-                    IntentResult::Ok(pos) => pos,
-                    IntentResult::ReachBottom(pos) => pos,
-                    IntentResult::OutBound(pos) => pos
-                };
-            self.tetro = Some(tetro);
+            match tetro.state {
+                TetroState::Descent => {
+                    self.move_to(self.tetro_pos.x, self.tetro_pos.y + 1, &mut tetro);
+                    self.tetro = Some(tetro);
+                },
+                TetroState::WaitToPlace => {
+                    self.place(self.tetro_pos.x, self.tetro_pos.y, &tetro);
+                }
+            }
             self.tick_count = 0; // initialize tick_count
         }
     }
 
-    pub fn drop_hard(&mut self) {
+    pub fn descend_hard(&mut self) {
         if let Some(mut tetro) = self.tetro.take() {
             self.tetro = Some(tetro);
         }
     }
 
-    fn intend_to_move(&self, x: u16, y: u16, tetro: &Tetro) -> IntentResult {
+    fn place(&mut self, x: u16, y: u16, tetro: &Tetro) {
+        let Size { width, height } = tetro.buffer.size();
+        let Pos { x: tetro_x, y: tetro_y } = self.tetro_pos;
+        for y in 0..height {
+            for x in 0..width {
+                if let Some(color) = tetro.buffer.get(x, y) {
+                    self.buffer.set(x + tetro_x, y + tetro_y, Some(color));
+                }
+            }
+        }
+    }
+
+    fn move_to(&mut self, x: u16, y: u16, tetro: &mut Tetro) {
         let pl_size = self.size();
         let size = tetro.size();
-        if (x + size.width) > pl_size.width {
-            IntentResult::OutBound(Pos::new(x - 1, y))
-        } else {
-            IntentResult::Ok(Pos::new(x, y))
+        if (x + size.width) > pl_size.width { // over right bound
+            self.tetro_pos = Pos::new(x - 1, y);
+            // self.debug_msg = format!("{:?}", self.tetro_pos);
+            tetro.state = TetroState::Descent;
+        } else if (y + size.height) > pl_size.height { // over bottom bound
+            self.tetro_pos = Pos::new(x, y - 1);
+            // self.debug_msg = format!("{:?}", self.tetro_pos);
+            tetro.state = TetroState::WaitToPlace;
+        } else if self.is_reach_bottom(x, y, &tetro) { // reach bottom
+            self.tetro_pos = Pos::new(x, y - 1);
+            // self.debug_msg = format!("{:?}", self.tetro_pos);
+            tetro.state = TetroState::WaitToPlace;
+        } else { // in bound
+            self.tetro_pos = Pos::new(x, y);
+            // self.debug_msg = format!("{:?}", self.tetro_pos);
+            tetro.state = TetroState::Descent;
         }
+    }
+
+    fn is_reach_bottom(&self, pos_x: u16, pos_y: u16, tetro: &Tetro) -> bool {
+        let Size { width, height } = tetro.buffer.size();
+        for ty in 0..height {
+            for tx in 0..width {
+                if let Some(_) = tetro.buffer.get(tx, ty) {
+                    if self.buffer.get(pos_x + tx, pos_y + ty).is_some() {
+                        return true
+                    }
+                }
+            }
+        }
+        false
     }
 }
