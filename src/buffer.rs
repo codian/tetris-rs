@@ -35,6 +35,20 @@ impl Buffer {
         self.cells[y as usize][x as usize]
     }
 
+    pub fn line_completed(&self, y: u16) -> bool {
+        for val in &self.cells[y as usize] {
+            if val.is_none() {
+                return false
+            }
+        }
+        true
+    }
+
+    pub fn remove_and_prepend_line(&mut self, y: u16) {
+        self.cells.remove(y as usize);
+        self.cells.insert(0, vec![None; self.width() as usize]);
+    }
+
     pub fn rotate_right(&mut self) -> Buffer {
         let size = self.size();
         let new_size = Size::new(size.height, size.width);

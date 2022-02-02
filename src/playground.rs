@@ -42,7 +42,10 @@ impl Playground {
     pub fn size(&self) -> Size { SIZE }
 
     pub fn on_tick(&mut self) -> bool {
-        //
+        // remove line completed
+        if self.remove_line_completed() {
+            return true;
+        }
 
         // new tetro
         if self.tetro.is_none() {
@@ -215,6 +218,21 @@ impl Playground {
             // self.debug_msg = format!("{:?}", self.tetro_pos);
             tetro.state = TetroState::Descent;
         }
+    }
+
+    fn remove_line_completed(&mut self) -> bool {
+        let size = self.buffer.size();
+        let mut y = 0;
+        let mut result = false;
+        while y < size.height {
+            if self.buffer.line_completed(y) {
+                self.buffer.remove_and_prepend_line(y);
+                result = true;
+            } else {
+                y += 1;
+            }
+        }
+        result
     }
 
     fn is_reach_bottom(&self, pos_x: u16, pos_y: u16, tetro: &Tetro) -> bool {
