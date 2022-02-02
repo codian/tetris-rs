@@ -8,7 +8,7 @@ use crate::{
 
 #[derive(Clone, Debug)]
 pub struct Buffer {
-  cells: Vec<Vec<Option<Color>>>
+    cells: Vec<Vec<Option<Color>>>
 }
 
 impl Buffer {
@@ -54,7 +54,7 @@ impl Buffer {
             Spans::from(
                 row.iter().map(|cell| {
                     if let Some(color) = cell {
-                        Span::styled("█", Style::default().bg(color.clone()))
+                        Span::styled("█", Style::default().fg(color.clone()))
                     } else {
                         Span::raw(" ")
                     }
