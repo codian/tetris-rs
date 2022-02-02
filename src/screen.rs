@@ -46,9 +46,9 @@ impl Screen {
         self.screen_pos = Pos::new(f_center.width - SIZE.mid_x(), f_center.height - SIZE.mid_y());
 
         // entire area
-        let block = Block::default()
-            .style(Style::default().bg(Color::Gray));
-        f.render_widget(block, self.rect(0, 0, SIZE.width, SIZE.height));
+        // let block = Block::default()
+        //     .style(Style::default().bg(Color::Gray));
+        // f.render_widget(block, self.rect(0, 0, SIZE.width, SIZE.height));
 
         // score
         let score = Paragraph::new(Spans::from(vec![
@@ -108,6 +108,7 @@ impl Screen {
                         Span::styled(
                             " PRESS SPACE KEY! ",
                             Style::default().bg(Color::Blue)
+                                .add_modifier(Modifier::SLOW_BLINK)
                         )
                     ])
                 ).alignment(Alignment::Center);
@@ -115,6 +116,7 @@ impl Screen {
                     0, SIZE.mid_y(), SIZE.width, 1
                 ));
             },
+
             // "FINISHED!"
             State::Finished => {
                 let finished = Paragraph::new(
@@ -122,6 +124,7 @@ impl Screen {
                         Span::styled(
                             " FINISHED! ",
                             Style::default().bg(Color::Blue)
+                                .add_modifier(Modifier::SLOW_BLINK)
                         )
                     ])
                 ).alignment(Alignment::Center);
