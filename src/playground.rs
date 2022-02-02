@@ -42,14 +42,20 @@ impl Playground {
     pub fn size(&self) -> Size { SIZE }
 
     pub fn on_tick(&mut self) -> bool {
-        // new next
-        if self.next.is_none() {
-            self.next = Some(Tetro::new());
-        }
+        //
 
         // new tetro
         if self.tetro.is_none() {
+            // new next
+            if self.next.is_none() {
+                self.next = Some(Tetro::new());
+            }
+
             self.tetro = if let Some(new_tetro) = self.next.take() {
+                if self.next.is_none() {
+                    self.next = Some(Tetro::new());
+                }
+
                 let pl_size = self.size();
                 let new_size = new_tetro.size();
                 let new_pos = Pos::new(pl_size.mid_x() - new_size.mid_x(), 0);
@@ -63,18 +69,20 @@ impl Playground {
                 self.tetro_pos = new_pos;
                 Some(new_tetro)
             } else {
+                assert!(false);
                 None
             };
 
             // self.debug_msg = format!("{:?}", self.next);
+            return true;
         }
 
         // descent tetro soft
         self.tick_count += 1;
         if self.tick_count > (MAX_DESCENT_SPEED - self.descent_speed) {
             self.descend_soft();
+            return true
         }
-        // self.debug_msg = format!("{:?}", self.tick_count);
 
         true
     }
