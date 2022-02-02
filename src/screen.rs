@@ -176,20 +176,4 @@ impl Screen {
             height
         }
     }
-
-    pub fn rect_from_rel_rect(&self, rel_rect: &Rect) -> Rect {
-        Rect {
-            x: rel_rect.x + self.pos.x,
-            y: rel_rect.y + self.pos.y,
-            ..(*rel_rect)
-        }
-    }
-
-    fn size(&self) -> Size { SIZE }
-
-    pub fn move_left(&self) {}
-    pub fn move_right(&self) {}
-    pub fn rotate_right(&self) {}
-    pub fn drop_soft(&self) {}
-    pub fn drop_hard(&self) {}
 }
