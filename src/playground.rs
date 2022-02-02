@@ -18,9 +18,16 @@ use crate::{
     buffer::Buffer,
     units::{Pos, Size}
 };
+use crate::playground::IntentResult::OutBound;
 
 const SIZE: Size = Size { width: 12, height: 20 };
 const MAX_DROP_SPEED: u32 = 10;
+
+enum IntentResult {
+    Ok(Pos),
+    OutBound(Pos),
+    ReachBottom(Pos)
+}
 
 #[derive(Debug)]
 pub struct Playground {
@@ -120,8 +127,15 @@ impl Playground {
     }
 
     pub fn move_left(&mut self) {
+        if self.tetro_pos.x == 0 { return }
+
         if let Some(mut tetro) = self.tetro.take() {
-            let new_pos = Pos::new(self.tetro_pos.x - 1, self.tetro_pos.y);
+            let new_pos =
+                match self.intend_to_move(self.tetro_pos.x - 1, self.tetro_pos.y, &tetro) {
+                    IntentResult::Ok(pos) => pos,
+                    IntentResult::ReachBottom(pos) => pos,
+                    IntentResult::OutBound(pos) => pos
+                };
 
             self.tetro = Some(tetro);
             self.tetro_pos = new_pos;
@@ -130,7 +144,12 @@ impl Playground {
 
     pub fn move_right(&mut self) {
         if let Some(mut tetro) = self.tetro.take() {
-            let new_pos = Pos::new(self.tetro_pos.x + 1, self.tetro_pos.y);
+            let new_pos =
+                match self.intend_to_move(self.tetro_pos.x + 1, self.tetro_pos.y, &tetro) {
+                    IntentResult::Ok(pos) => pos,
+                    IntentResult::ReachBottom(pos) => pos,
+                    IntentResult::OutBound(pos) => pos
+                };
 
             self.tetro = Some(tetro);
             self.tetro_pos = new_pos;
@@ -141,20 +160,43 @@ impl Playground {
         if let Some(mut tetro) = self.tetro.take() {
             let size = tetro.size();
             let new_tetro = tetro.rotate_right();
-            let new_pos = Pos::new(self.tetro_pos.x + size.mid_x() - 1, self.tetro_pos.y + size.mid_y() - 1);
+            let new_pos =
+                match self.intend_to_move(self.tetro_pos.x + size.mid_x() - 1, self.tetro_pos.y + size.mid_y() - 1, &tetro) {
+                    IntentResult::Ok(pos) => pos,
+                    IntentResult::ReachBottom(pos) => pos,
+                    IntentResult::OutBound(pos) => pos
+                };
 
             self.tetro = Some(new_tetro);
             self.tetro_pos = new_pos;
         }
     }
     pub fn drop_soft(&mut self) {
-        self.tetro_pos = Pos::new(self.tetro_pos.x, self.tetro_pos.y + 1);
-        self.tick_count = 0; // initialize tick_count
+        if let Some(mut tetro) = self.tetro.take() {
+            self.tetro_pos =
+                match self.intend_to_move(self.tetro_pos.x, self.tetro_pos.y + 1, &tetro) {
+                    IntentResult::Ok(pos) => pos,
+                    IntentResult::ReachBottom(pos) => pos,
+                    IntentResult::OutBound(pos) => pos
+                };
+            self.tetro = Some(tetro);
+            self.tick_count = 0; // initialize tick_count
+        }
     }
 
     pub fn drop_hard(&mut self) {
         if let Some(mut tetro) = self.tetro.take() {
             self.tetro = Some(tetro);
+        }
+    }
+
+    fn intend_to_move(&self, x: u16, y: u16, tetro: &Tetro) -> IntentResult {
+        let pl_size = self.size();
+        let size = tetro.size();
+        if (x + size.width) > pl_size.width {
+            IntentResult::OutBound(Pos::new(x - 1, y))
+        } else {
+            IntentResult::Ok(Pos::new(x, y))
         }
     }
 }
