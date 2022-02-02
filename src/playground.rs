@@ -224,14 +224,23 @@ impl Playground {
         let size = self.buffer.size();
         let mut y = 0;
         let mut result = false;
+
+        let mut completed_lines_count = 0;
         while y < size.height {
             if self.buffer.line_completed(y) {
                 self.buffer.remove_and_prepend_line(y);
+                completed_lines_count += 1;
                 result = true;
             } else {
                 y += 1;
             }
         }
+
+        // add score. 10 -> 30 -> 60 -> 100
+        if completed_lines_count > 0 {
+            self.score += (completed_lines_count * (completed_lines_count + 1)) / 2 * 10;
+        }
+
         result
     }
 
