@@ -56,7 +56,7 @@ impl Buffer {
                     if let Some(color) = cell {
                         Span::styled("█", Style::default().fg(color.clone()))
                     } else {
-                        Span::raw(" ")
+                        Span::styled(" ", Style::default())
                     }
                 }).collect::<Vec<Span>>()
             )
