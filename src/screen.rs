@@ -29,7 +29,7 @@ pub enum State {
 #[derive(Debug)]
 pub struct Screen {
     pub state: State,
-    pub pos: Pos,
+    pub screen_pos: Pos,
     pub playground: Playground,
     pub debug_msg: String
 }
@@ -42,7 +42,7 @@ impl Screen {
         // setup pos
         let f_size = f.size();
         let f_center = Size::new(f_size.width / 2, f_size.height / 2);
-        self.pos = Pos::new(f_center.width - SIZE.mid_x(), f_center.height - SIZE.mid_y());
+        self.screen_pos = Pos::new(f_center.width - SIZE.mid_x(), f_center.height - SIZE.mid_y());
 
         // entire area
         let block = Block::default()
@@ -164,7 +164,7 @@ impl Screen {
     pub fn new() -> Screen {
         Screen {
             state: State::Ready,
-            pos: Pos::new(0, 0),
+            screen_pos: Pos::new(0, 0),
             playground: Playground::new(),
             debug_msg: String::from("")
         }
@@ -172,8 +172,8 @@ impl Screen {
 
     pub fn rect(&self, x: u16, y: u16, width: u16, height: u16) -> Rect {
         Rect {
-            x: x + self.pos.x,
-            y: y + self.pos.y,
+            x: x + self.screen_pos.x,
+            y: y + self.screen_pos.y,
             width,
             height
         }
