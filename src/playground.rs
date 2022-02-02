@@ -41,16 +41,27 @@ pub struct Playground {
 impl Playground {
     pub fn size(&self) -> Size { SIZE }
 
-    pub fn on_tick(&mut self) {
-        // new next and tetro
+    pub fn on_tick(&mut self) -> bool {
+        // new next
         if self.next.is_none() {
             self.next = Some(Tetro::new());
-        } else if self.tetro.is_none() {
-            self.tetro = if let Some(new) = self.next.take() {
+        }
+
+        // new tetro
+        if self.tetro.is_none() {
+            self.tetro = if let Some(new_tetro) = self.next.take() {
                 let pl_size = self.size();
-                let new_size = new.size();
-                self.tetro_pos = Pos::new(pl_size.mid_x() - new_size.mid_x(), 0);
-                Some(new)
+                let new_size = new_tetro.size();
+                let new_pos = Pos::new(pl_size.mid_x() - new_size.mid_x(), 0);
+
+                // finish game
+                if self.is_reach_bottom(new_pos.x, new_pos.y, &new_tetro) {
+                    self.place(new_pos.x, new_pos.y, &new_tetro);
+                    return false;
+                }
+
+                self.tetro_pos = new_pos;
+                Some(new_tetro)
             } else {
                 None
             };
@@ -64,6 +75,8 @@ impl Playground {
             self.descend_soft();
         }
         // self.debug_msg = format!("{:?}", self.tick_count);
+
+        true
     }
 
     pub fn on_keydown(&mut self, key: &KeyEvent) {
@@ -90,6 +103,17 @@ impl Playground {
             },
             _ => {}
         }
+    }
+
+    pub fn clear(&mut self) {
+        self.buffer = Buffer::new(SIZE);
+        self.score = 0;
+        self.tetro_pos = Pos::new(0, 0);
+        self.tetro = None;
+        self.next = None;
+        self.debug_msg = String::from("");
+        self.descent_speed = 1;
+        self.tick_count = 0;
     }
 
     pub fn new() -> Playground {

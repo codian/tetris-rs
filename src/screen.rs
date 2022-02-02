@@ -23,6 +23,7 @@ use crate::{
 pub enum State {
     Ready,
     Playing,
+    Finishing,
     Finished
 }
 
@@ -99,8 +100,8 @@ impl Screen {
                 1 + pos.x, 3 + pos.y, size.width, size.height));
         }
 
-        // press space key
         match self.state {
+            // "PRESS SPACE KEY!"
             State::Ready => {
                 let press_space_key = Paragraph::new(
                     Spans::from(vec![
@@ -111,6 +112,20 @@ impl Screen {
                     ])
                 ).alignment(Alignment::Center);
                 f.render_widget(press_space_key, self.rect(
+                    0, SIZE.mid_y(), SIZE.width, 1
+                ));
+            },
+            // "FINISHED!"
+            State::Finished => {
+                let finished = Paragraph::new(
+                    Spans::from(vec![
+                        Span::styled(
+                            " FINISHED! ",
+                            Style::default().bg(Color::Blue)
+                        )
+                    ])
+                ).alignment(Alignment::Center);
+                f.render_widget(finished, self.rect(
                     0, SIZE.mid_y(), SIZE.width, 1
                 ));
             },
@@ -133,10 +148,15 @@ impl Screen {
         match self.state {
             State::Ready => {
             },
+            State::Finishing => {
+                self.state = State::Finished
+            },
             State::Finished => {
             },
             State::Playing => {
-                self.playground.on_tick();
+                if !self.playground.on_tick() {
+                    self.state = State::Finishing
+                }
             }
         }
     }
@@ -149,9 +169,12 @@ impl Screen {
                 },
                 _ => {}
             },
+            State::Finishing => {
+            },
             State::Finished => match key.code {
                 KeyCode::Char(char) if char == ' ' => {
                     self.state = State::Ready;
+                    self.playground.clear();
                 },
                 _ => {}
             },
