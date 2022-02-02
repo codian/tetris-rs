@@ -59,6 +59,11 @@ impl App {
                     } else {
                         self.screen.on_keydown(&key);
                     }
+
+                    // consume remaining key events
+                    while crossterm::event::poll(Duration::from_secs(0))? {
+                        event::read()?;
+                    }
                 }
             }
 
